@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 寶可夢隨機抽卡日曆</title>
+    <style>
+        :root {
+            --charizard-orange: #FF8C00;
+            --charizard-red: #E3350D;
+            --charizard-dark: #1A1A1B;
+            --charizard-gold: #FFD700;
+            --pikachu-yellow: #FEE12B;
+        }
+
+        body {
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            background-color: #0c0c0c;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: radial-gradient(circle at center, #4a1e1e 0%, #0c0c0c 100%);
+        }
+
+        .calendar-card {
+            background-color: var(--charizard-dark);
+            width: 480px;
+            border-radius: 30px;
+            box-shadow: 0 0 50px rgba(227, 53, 13, 0.6);
+            border: 4px solid var(--charizard-orange);
+            overflow: hidden;
+            text-align: center;
+        }
+
+        /* 頂部圖片展示區 */
+        .pokemon-display {
+            background: linear-gradient(180deg, #FF9D00, #E3350D);
+            padding: 20px;
+            height: 220px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-bottom: 5px solid var(--charizard-gold);
+        }
+
+        #currentPokemon {
+            height: 160px;
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.4));
+            transition: transform 0.3s ease;
+        }
+
+        #pokemonInfo {
+            margin-top: 10px;
+            background: rgba(0,0,0,0.5);
+            padding: 2px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            color: var(--charizard-gold);
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 25px;
+            background: rgba(0,0,0,0.3);
+        }
+
+        .nav-btn {
+            background: var(--charizard-gold);
+            border: none;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* 日曆表格 */
+        .calendar-body {
+            padding: 10px 15px 20px 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 4px;
+        }
+
+        td {
+            width: 14%;
+            height: 60px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            cursor: pointer;
+            position: relative;
+            transition: 0.2s;
+        }
+
+        td:hover:not(:empty) {
+            background: var(--charizard-orange);
+            transform: scale(1.05);
+        }
+
+        .day-num {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        /* 每一天的皮卡丘小頭 */
+        .pika-icon {
+            width: 25px;
+            height: 25px;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .footer {
+            background: var(--pikachu-yellow);
+            color: black;
+            padding: 10px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="calendar-card">
+    <div class="pokemon-display">
+        <img id="currentPokemon" src="https://tw.portal-pokemon.com/play/resources/pokedex/img/pm/ca3db4aad5c85a525d9be86852b26db1db7a22c0.png" alt="Pokemon">
+        <div id="pokemonInfo">點擊日期來捕捉寶可夢！</div>
+    </div>
+
+    <div class="controls">
+        <button class="nav-btn" onclick="changeMonth(-1)">◀</button>
+        <h2 id="monthTitle" style="margin:0; color:var(--charizard-gold)">MAY 2026</h2>
+        <button class="nav-btn" onclick="changeMonth(1)">▶</button>
+    </div>
+
+    <div class="calendar-body">
+        <table>
+            <thead>
+                <tr>
+                    <th>S</th><th>M</th><th>T</th><th>W</th><th>T</th><th>F</th><th>S</th>
+                </tr>
+            </thead>
+            <tbody id="calendarGrid"></tbody>
+        </table>
+    </div>
+
+    <div class="footer">點擊日期抽一張 30 週年紀念卡！</div>
+</div>
+
+<script>
+    let currentMonth = 4;
+    const year = 2026;
+
+    // 皮卡丘頭像 SVG
+    const pikaSvg = `<svg class="pika-icon" viewBox="0 0 100 100"><circle cx="50" cy="60" r="30" fill="#FEE12B" stroke="black" stroke-width="3"/><circle cx="35" cy="55" r="4" fill="black"/><circle cx="65" cy="55" r="4" fill="black"/><circle cx="25" cy="65" r="5" fill="#FF3B3B"/><circle cx="75" cy="65" r="5" fill="#FF3B3B"/><path d="M15,20 Q25,0 35,30" fill="#FEE12B" stroke="black" stroke-width="3"/><path d="M85,20 Q75,0 65,30" fill="#FEE12B" stroke="black" stroke-width="3"/></svg>`;
+
+    function render(m) {
+        const grid = document.getElementById('calendarGrid');
+        const firstDay = new Date(year, m, 1).getDay();
+        const daysInMonth = new Date(year, m + 1, 0).getDate();
+        
+        document.getElementById('monthTitle').innerText = (m + 1) + "月 " + year;
+
+        let html = "";
+        let day = 1;
+
+        for (let i = 0; i < 6; i++) {
+            let row = "<tr>";
+            for (let j = 0; j < 7; j++) {
+                if (i === 0 && j < firstDay) {
+                    row += "<td></td>";
+                } else if (day > daysInMonth) {
+                    row += "<td></td>";
+                } else {
+                    row += `<td onclick="getRandomPokemon(${day})">
+                                <div class="day-num">${day}</div>
+                                ${pikaSvg}
+                            </td>`;
+                    day++;
+                }
+            }
+            row += "</tr>";
+            html += row;
+            if (day > daysInMonth) break;
+        }
+        grid.innerHTML = html;
+    }
+
+    // 隨機獲取寶可夢圖片的功能
+    function getRandomPokemon(day) {
+        // 寶可夢全國圖鑑目前大約到 1025 號
+        const randomID = Math.floor(Math.random() * 1010) + 1;
+        
+        // 格式化 ID 變成官方網址需要的樣子 (例如 1 -> 0001)
+        // 注意：有些圖片連結規則不同，這裡使用一個較穩定的官方圖庫格式
+        const formattedID = randomID.toString().padStart(3, '0');
+        
+        // 更新圖片
+        const imgElement = document.getElementById('currentPokemon');
+        const infoElement = document.getElementById('pokemonInfo');
+        
+        // 使用官方圖鑑 API 格式
+        imgElement.style.transform = "scale(0.5)";
+        imgElement.style.opacity = "0";
+        
+        setTimeout(() => {
+            imgElement.src = `https://assets.pokemon.com/assets/cms2/img/pokedex/full/${formattedID}.png`;
+            infoElement.innerText = `你在 ${day} 日抽到了圖鑑編號 #${formattedID}！`;
+            imgElement.style.transform = "scale(1)";
+            imgElement.style.opacity = "1";
+        }, 200);
+    }
+
+    function changeMonth(dir) {
+        currentMonth += dir;
+        if (currentMonth < 0) currentMonth = 11;
+        if (currentMonth > 11) currentMonth = 0;
+        render(currentMonth);
+    }
+
+    render(currentMonth);
+</script>
+
+</body>
+</html>
