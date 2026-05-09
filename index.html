@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>keanu的個人空間 - 五年級</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto+Sans+TC', sans-serif;
+            background-color: #A9DCFF;
+        }
+        .category-btn {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .category-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .active-btn {
+            background-color: #3b82f6 !important;
+            color: white !important;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center py-10 px-4">
+
+    <!-- Header Section -->
+    <header class="text-center mb-10">
+        <div class="w-24 h-24 bg-white rounded-full mx-auto mb-4 flex items-center justify-center shadow-md border-4 border-blue-200">
+            <span class="text-4xl">🚀</span>
+        </div>
+        <h1 class="text-3xl font-bold text-gray-800">keanu的個人空間</h1>
+        <p class="text-gray-500 mt-2">我是五年的keanu，歡迎來到我的秘密基地！</p>
+    </header>
+
+    <!-- Category Selector -->
+    <nav class="flex gap-4 mb-12 w-full max-w-md">
+        <button onclick="showCategory('about')" id="btn-about" class="category-btn flex-1 py-3 px-4 bg-white text-blue-500 font-bold rounded-2xl border-2 border-blue-200 active-btn">
+            🙋‍♂️ 自我介紹
+        </button>
+        <button onclick="showCategory('works')" id="btn-works" class="category-btn flex-1 py-3 px-4 bg-white text-blue-500 font-bold rounded-2xl border-2 border-blue-200">
+            🎨 我的作品
+        </button>
+        <button onclick="showCategory('links')" id="btn-links" class="category-btn flex-1 py-3 px-4 bg-white text-blue-500 font-bold rounded-2xl border-2 border-blue-200">
+            🔗 好站分享
+        </button>
+    </nav>
+
+    <!-- Content Area -->
+    <main id="content-area" class="w-full max-w-2xl bg-white rounded-3xl p-8 shadow-sm border border-gray-100 fade-in">
+        <!-- Default content will be injected here -->
+    </main>
+
+    <footer class="mt-auto pt-10 text-gray-400 text-sm">
+        © 2026 keanu的五年級成長紀錄
+    </footer>
+
+    <script>
+        // 這是從你的 CSV 轉換過來的資料
+        const worksData = [
+            {"項目名稱":"Scratch 創意遊戲","網址":"https://scratch.mit.edu","圖示":"🐱"},
+            {"項目名稱":"我的數位畫廊","網址":"https://keanulin256688.github.io/photos/Gemini_Generated_Image_t3p41tt3p41tt3p4.png","圖示":"🖼️"},
+            {"項目名稱":"皮卡丘的無限冷笑話","網址":"https://gemini.google.com/share/687d2d5fca60","圖示":"🤣"},
+            {"項目名稱":"寶可夢2026月曆","網址":"https://keanulin256688.github.io/calender2026v4.html","圖示":"🗓️"},
+            {"項目名稱":"皮卡丘爬101","網址":"https://youtube.com/shorts/pTeKH38P0HE?feature=share","圖示":"📺"}
+        ];
+
+        const categories = {
+            about: {
+                title: "關於我",
+                description: "我是一個熱愛運動和畫畫的五年級生，目前正在學習寫程式！",
+                links: [
+                    { name: "我的班級日誌", url: "https://example.com/class-blog", icon: "📝" },
+                    { name: "我的運動紀錄卡", url: "https://example.com/sports", icon: "🏀" }
+                ]
+            },
+            works: {
+                title: "我的精彩作品",
+                description: "這裡收集了我平時畫的圖，還有在資訊課做的動畫作品。",
+                // 這裡會自動讀取上面 worksData 的內容
+                links: worksData.map(item => ({
+                    name: item["項目名稱"],
+                    url: item["網址"],
+                    icon: item["圖示"]
+                }))
+            },
+            links: {
+                title: "推薦的好站",
+                description: "這些是我平常查資料或練習英文時最常去的網站，分享給大家！",
+                links: [
+                    { name: "均一教育平台", url: "https://www.junyiacademy.org", icon: "📚" },
+                    { name: "教育部國語辭典", url: "https://dict.revised.moe.edu.tw", icon: "📖" },
+                    { name: "酷英網 Cool English", url: "https://www.coolenglish.edu.tw", icon: "🔤" },
+                    { name: "cpaizo", url: "https://cpaizo.github.io/", icon: "👨‍💻"  }
+                ]
+            }
+        };
+
+        function showCategory(key) {
+            const data = categories[key];
+            const container = document.getElementById('content-area');
+            
+            document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('active-btn'));
+            const activeBtn = document.getElementById(`btn-${key}`);
+            if (activeBtn) activeBtn.classList.add('active-btn');
+
+            container.classList.remove('fade-in');
+            void container.offsetWidth; 
+            container.classList.add('fade-in');
+
+            let linksHtml = data.links.map(link => `
+                <a href="${link.url}" target="_blank" class="flex items-center p-4 mb-4 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors group">
+                    <span class="text-2xl mr-4">${link.icon}</span>
+                    <span class="text-blue-700 font-medium flex-grow">${link.name}</span>
+                    <span class="text-blue-300 group-hover:translate-x-1 transition-transform">➜</span>
+                </a>
+            `).join('');
+
+            container.innerHTML = `
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">${data.title}</h2>
+                <p class="text-gray-600 mb-8">${data.description}</p>
+                <div class="space-y-2">
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">網站連結</p>
+                    ${linksHtml}
+                </div>
+            `;
+        }
+
+        window.onload = () => showCategory('about');
+    </script>
+</body>
+</html>
