@@ -33,7 +33,6 @@
 </head>
 <body class="min-h-screen flex flex-col items-center py-10 px-4">
 
-    <!-- Header Section -->
     <header class="text-center mb-10">
         <div class="w-24 h-24 bg-white rounded-full mx-auto mb-4 flex items-center justify-center shadow-md border-4 border-blue-200">
             <span class="text-4xl">🚀</span>
@@ -42,7 +41,6 @@
         <p class="text-gray-500 mt-2">我是五年的keanu，歡迎來到我的秘密基地！</p>
     </header>
 
-    <!-- Category Selector -->
     <nav class="flex gap-4 mb-12 w-full max-w-md">
         <button onclick="showCategory('about')" id="btn-about" class="category-btn flex-1 py-3 px-4 bg-white text-blue-500 font-bold rounded-2xl border-2 border-blue-200 active-btn">
             🙋‍♂️ 自我介紹
@@ -55,9 +53,8 @@
         </button>
     </nav>
 
-    <!-- Content Area -->
     <main id="content-area" class="w-full max-w-2xl bg-white rounded-3xl p-8 shadow-sm border border-gray-100 fade-in">
-        <!-- Default content will be injected here -->
+        <!-- 內容會由 JavaScript 注入 -->
     </main>
 
     <footer class="mt-auto pt-10 text-gray-400 text-sm">
@@ -65,20 +62,30 @@
     </footer>
 
     <script>
-        // 這是從你的 CSV 轉換過來的資料
-        const worksData = [
-            {"項目名稱":"Scratch 創意遊戲","網址":"https://scratch.mit.edu","圖示":"🐱"},
-            {"項目名稱":"我的數位畫廊","網址":"https://keanulin256688.github.io/photos/Gemini_Generated_Image_t3p41tt3p41tt3p4.png","圖示":"🖼️"},
-            {"項目名稱":"皮卡丘的無限冷笑話","網址":"https://gemini.google.com/share/687d2d5fca60","圖示":"🤣"},
-            {"項目名稱":"寶可夢2026月曆","網址":"https://keanulin256688.github.io/calender2026v4.html","圖示":"🗓️"},
-            {"項目名稱":"皮卡丘爬101","網址":"https://youtube.com/shorts/pTeKH38P0HE?feature=share","圖示":"📺"}
-        ];
+        let worksData = [];
+
+        // 新增：從 CSV 檔案讀取資料的函式
+        async function loadCSV() {
+            try {
+                const response = await fetch('keanu_works_list.csv');
+                const data = await response.text();
+                
+                // 簡單解析 CSV (假設第一行是標題，格式為：項目名稱,網址,圖示)
+                const rows = data.split('\n').slice(1); 
+                worksData = rows.filter(row => row.trim() !== "").map(row => {
+                    const [name, url, icon] = row.split(',');
+                    return { name: name.trim(), url: url.trim(), icon: icon.trim() };
+                });
+            } catch (error) {
+                console.error("無法載入 CSV:", error);
+            }
+        }
 
         const categories = {
             about: {
                 title: "關於我",
                 description: "我是一個熱愛運動和畫畫的五年級生，目前正在學習寫程式！",
-                links: [
+                getLinks: () => [
                     { name: "我的班級日誌", url: "https://example.com/class-blog", icon: "📝" },
                     { name: "我的運動紀錄卡", url: "https://example.com/sports", icon: "🏀" }
                 ]
@@ -86,17 +93,12 @@
             works: {
                 title: "我的精彩作品",
                 description: "這裡收集了我平時畫的圖，還有在資訊課做的動畫作品。",
-                // 這裡會自動讀取上面 worksData 的內容
-                links: worksData.map(item => ({
-                    name: item["項目名稱"],
-                    url: item["網址"],
-                    icon: item["圖示"]
-                }))
+                getLinks: () => worksData // 直接回傳 CSV 讀到的資料
             },
             links: {
                 title: "推薦的好站",
                 description: "這些是我平常查資料或練習英文時最常去的網站，分享給大家！",
-                links: [
+                getLinks: () => [
                     { name: "均一教育平台", url: "https://www.junyiacademy.org", icon: "📚" },
                     { name: "教育部國語辭典", url: "https://dict.revised.moe.edu.tw", icon: "📖" },
                     { name: "酷英網 Cool English", url: "https://www.coolenglish.edu.tw", icon: "🔤" },
@@ -106,18 +108,18 @@
         };
 
         function showCategory(key) {
-            const data = categories[key];
+            const category = categories[key];
+            const links = category.getLinks();
             const container = document.getElementById('content-area');
             
             document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('active-btn'));
-            const activeBtn = document.getElementById(`btn-${key}`);
-            if (activeBtn) activeBtn.classList.add('active-btn');
+            document.getElementById(`btn-${key}`).classList.add('active-btn');
 
             container.classList.remove('fade-in');
             void container.offsetWidth; 
             container.classList.add('fade-in');
 
-            let linksHtml = data.links.map(link => `
+            let linksHtml = links.map(link => `
                 <a href="${link.url}" target="_blank" class="flex items-center p-4 mb-4 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors group">
                     <span class="text-2xl mr-4">${link.icon}</span>
                     <span class="text-blue-700 font-medium flex-grow">${link.name}</span>
@@ -126,8 +128,8 @@
             `).join('');
 
             container.innerHTML = `
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">${data.title}</h2>
-                <p class="text-gray-600 mb-8">${data.description}</p>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">${category.title}</h2>
+                <p class="text-gray-600 mb-8">${category.description}</p>
                 <div class="space-y-2">
                     <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">網站連結</p>
                     ${linksHtml}
@@ -135,7 +137,11 @@
             `;
         }
 
-        window.onload = () => showCategory('about');
+        // 初始化：先讀 CSV，再顯示畫面
+        window.onload = async () => {
+            await loadCSV();
+            showCategory('about');
+        };
     </script>
 </body>
 </html>
