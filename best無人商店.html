@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 無人水果商店 - 智慧結帳系統</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+        header {
+            grid-column: span 2;
+            text-align: center;
+            background-color: #e67e22;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .promo-banner {
+            grid-column: span 2;
+            background: linear-gradient(45deg, #e74c3c, #f39c12);
+            color: white;
+            text-align: center;
+            padding: 15px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.01); }
+            100% { transform: scale(1); }
+        }
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .camera-box {
+            background-color: #000;
+            height: 400px;
+            border-radius: 8px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #2ecc71;
+            overflow: hidden;
+            border: 4px solid #333;
+        }
+        #webcam-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #webcam-container canvas {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover;
+        }
+        .scan-line {
+            position: absolute;
+            width: 100%;
+            height: 4px;
+            background-color: #2ecc71;
+            top: 0;
+            box-shadow: 0 0 10px #2ecc71;
+            animation: scan 3s linear infinite;
+            pointer-events: none;
+            z-index: 10;
+        }
+        @keyframes scan {
+            0% { top: 0%; }
+            50% { top: 100%; }
+            100% { top: 0%; }
+        }
+        .camera-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            z-index: 10;
+        }
+        .ai-status {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #f39c12;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            z-index: 10;
+        }
+        .camera-instruction {
+            position: absolute;
+            bottom: 10px;
+            background: rgba(0,0,0,0.8);
+            color: #fff;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            text-align: center;
+            z-index: 10;
+            max-width: 80%;
+        }
+        .debug-status {
+            position: absolute;
+            bottom: 50px;
+            background: rgba(231, 76, 60, 0.9);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            z-index: 11;
+            font-family: monospace;
+        }
+        .btn-start-camera {
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            z-index: 20;
+            transition: all 0.2s;
+        }
+        .btn-start-camera:hover {
+            background-color: #27ae60;
+            transform: scale(1.05);
+        }
+        .price-board {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 8px solid #f1c40f;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .price-board h2 {
+            margin-top: 0;
+            color: #e67e22;
+            border-bottom: 2px solid #f1c40f;
+            padding-bottom: 5px;
+        }
+        .price-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .price-item {
+            background: #fafafa;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            border: 1px solid #eee;
+        }
+        .price-item .icon { font-size: 1.8rem; margin-bottom: 5px; }
+        .price-item .name { font-weight: bold; }
+        .price-item .price { color: #e74c3c; font-weight: bold; }
+
+        .receipt-panel {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+        }
+        .receipt-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            border-bottom: 2px dashed #ccc;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .cart-list {
+            flex-grow: 1;
+            min-height: 150px;
+        }
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .discount-text {
+            color: #e74c3c;
+            font-size: 0.85rem;
+            padding-left: 10px;
+            font-style: italic;
+        }
+        .total-section {
+            border-top: 2px dashed #ccc;
+            padding-top: 15px;
+            margin-top: 15px;
+        }
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #e74c3c;
+            margin-bottom: 15px;
+        }
+        .btn-checkout {
+            width: 100%;
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 1.1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 3px 0 #27ae60;
+            transition: all 0.1s;
+        }
+        .btn-checkout:hover { background-color: #27ae60; }
+        .btn-checkout:active { transform: translateY(3px); box-shadow: none; }
+         
+        .btn-clear {
+            width: 100%;
+            background-color: #95a5a6;
+            color: white;
+            border: none;
+            padding: 8px;
+            margin-top: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-clear:hover { background-color: #7f8c8d; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+     
+    <header>
+        <h1>🍅 SmartMart AI 無人商店 Kiwi 版</h1>
+    </header>
+
+    <div class="promo-banner">
+        🔥 驚喜大促銷：同品項滿 3 件直接享 8 折 (20% OFF) 優惠！ 🔥
+    </div>
+
+    <div class="left-panel">
+         
+        <div class="camera-box">
+            <div class="camera-overlay">🔴 LIVE | 視訊鏡頭 (AI 即時辨識中)</div>
+            <div id="ai-loading" class="ai-status">等待啟動...</div>
+            <div class="scan-line"></div>
+             
+            <button id="start-btn" class="btn-start-camera" onclick="initAI()">點擊啟動 AI 相機</button>
+            <div id="webcam-container"></div>
+            
+            <div id="debug-text" class="debug-status" style="display:none;">AI 當前看見的標籤: 等待中...</div>
+             
+            <div class="camera-instruction" id="instruction">
+                請點選「點擊啟動 AI 相機」並允許使用攝影機。將水果/蔬菜拿至鏡頭前維持 1.5 秒即可自動感應！
+            </div>
+        </div>
+
+        <div class="price-board">
+            <h2>📋 今日商品單價告示牌</h2>
+            <div class="price-grid">
+                <div class="price-item">
+                    <div class="icon">🍅</div>
+                    <div class="name">番茄</div>
+                    <div class="price">$25 / 個</div>
+                </div>
+                <div class="price-item">
+                    <div class="icon">🍑</div>
+                    <div class="name">桃子</div>
+                    <div class="price">$45 / 個</div>
+                </div>
+                <div class="price-item">
+                    <div class="icon">🍏</div>
+                    <div class="name">青蘋果</div>
+                    <div class="price">$30 / 個</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="receipt-panel">
+        <div class="receipt-title">🛒 AI 辨識結帳明細</div>
+         
+        <div class="cart-list" id="cartList">
+            <p style="color: #999; text-align: center; margin-top: 40px;">請先啟動相機，並將商品放到相機鏡頭前...</p>
+        </div>
+
+        <div class="total-section">
+            <div class="total-row">
+                <span>總計金額：</span>
+                <span id="totalPrice">$0</span>
+            </div>
+            <button class="btn-checkout" onclick="checkoutCart()">確認結帳 (列印收據)</button>
+            <button class="btn-clear" onclick="clearCart()">重新辨識 (清空)</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // 💡 核心更新：完美對應新模型 zunvgapZl 的四個順序（tomato, peach, green apple, background）
+    const fruitOrder = [
+        { key: 'tomato',     name: '番茄',   price: 25, icon: '🍅' }, // 順序 0 (第1個 Class)
+        { key: 'peach',      name: '桃子',   price: 45, icon: '🍑' }, // 順序 1 (第2個 Class)
+        { key: 'greenApple', name: '青蘋果', price: 30, icon: '🍏' }  // 順序 2 (第3個 Class)
+        // 順序 3 是背景，後台會自動偵測過濾，不需要寫在這裡
+    ];
+
+    let cart = { tomato: 0, peach: 0, greenApple: 0 };
+
+    function playBeep() {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(1200, audioCtx.currentTime); 
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); 
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.12); 
+        } catch(e) {
+            console.log("音效播放失敗:", e);
+        }
+    }
+
+    function addToCart(fruitKey) {
+        if (cart[fruitKey] !== undefined) {
+            cart[fruitKey]++;
+            playBeep(); 
+            updateReceipt();
+        }
+    }
+
+    function clearCart() {
+        for (let key in cart) { cart[key] = 0; }
+        updateReceipt();
+    }
+
+    function checkoutCart() {
+        let total = document.getElementById('totalPrice').innerText;
+        if(total === "$0") {
+            alert("購物車內尚無商品，請先拿商品靠近鏡頭辨識！");
+            return;
+        }
+         
+        let receiptSummary = "=== SmartMart 購買收據 ===\n";
+        fruitOrder.forEach(item => {
+            if (cart[item.key] > 0) {
+                receiptSummary += `${item.icon} ${item.name} x ${cart[item.key]}\n`;
+            }
+        });
+        receiptSummary += `---------------------\n應付總金額: ${total}\n\n感謝您的光臨！付款成功！`;
+         
+        alert(receiptSummary);
+        clearCart(); 
+    }
+
+    function updateReceipt() {
+        const cartListHtml = document.getElementById('cartList');
+        const totalPriceHtml = document.getElementById('totalPrice');
+        let html = '';
+        let total = 0;
+        let hasItem = false;
+
+        fruitOrder.forEach(item => {
+            const count = cart[item.key];
+            if (count > 0) {
+                hasItem = true;
+                let itemTotal = item.price * count;
+                let discountText = '';
+
+                // 💡 滿 3 件打 8 折活動邏輯
+                if (count >= 3) {
+                    itemTotal = Math.round(itemTotal * 0.8);
+                    discountText = `<br><span class="discount-text">(已享滿 3 件 8 折優惠!)</span>`;
+                }
+                total += itemTotal;
+                html += `
+                    <div class="cart-item">
+                        <div>
+                            <strong>${item.icon} ${item.name}</strong> x ${count}
+                            ${discountText}
+                        </div>
+                        <div>$${itemTotal}</div>
+                    </div>
+                `;
+            }
+        });
+
+        if (!hasItem) {
+            cartListHtml.innerHTML = `<p style="color: #999; text-align: center; margin-top: 40px;">請將商品放到相機鏡頭前...</p>`;
+            totalPriceHtml.innerText = '$0';
+        } else {
+            cartListHtml.innerHTML = html;
+            totalPriceHtml.innerText = `$${total}`;
+        }
+    }
+
+    // --- AI 影像辨識驅動區 ---
+    // 💡 已經將網址完全更新為你的新模型
+    const URL = "https://teachablemachine.withgoogle.com/models/zunvgapZl/"; 
+    let model, webcam, maxPredictions;
+
+    let lastDetectedFruit = null;
+    let detectionTimer = 0;
+    const COOLDOWN_TIME = 1500; 
+
+    async function initAI() {
+        let statusTag = document.getElementById("ai-loading");
+        statusTag.innerText = "模型載入中...";
+        document.getElementById("start-btn").style.display = "none";
+
+        let correctedURL = URL;
+        if (!correctedURL.endsWith("/")) { correctedURL += "/"; }
+
+        const modelURL = correctedURL + "model.json";
+        const metadataURL = correctedURL + "metadata.json";
+
+        try {
+            model = await tmImage.load(modelURL, metadataURL);
+            maxPredictions = model.getTotalClasses();
+
+            const flip = true; 
+            webcam = new tmImage.Webcam(400, 400, flip); 
+            await webcam.setup(); 
+            await webcam.play();
+            window.requestAnimationFrame(loop);
+
+            document.getElementById("webcam-container").appendChild(webcam.canvas);
+            document.getElementById("debug-text").style.display = "block";
+             
+            statusTag.innerText = "● AI 運作中";
+            statusTag.style.backgroundColor = "#2ecc71";
+            document.getElementById("instruction").innerText = "請將商品拿至鏡頭前維持 1.5 秒即可自動感應！";
+        } catch (e) {
+            alert("❌ 相機啟動失敗！錯誤原因：\n" + e.message);
+            document.getElementById("start-btn").style.display = "block"; 
+        }
+    }
+
+    async function loop() {
+        webcam.update(); 
+        await predict();
+        window.requestAnimationFrame(loop);
+    }
+
+    async function predict() {
+        const prediction = await model.predict(webcam.canvas);
+        
+        let highestIndex = 0;
+        let highestProb = 0;
+         
+        for (let i = 0; i < maxPredictions; i++) {
+            if(prediction[i].probability > highestProb) {
+                highestProb = prediction[i].probability;
+                highestIndex = i;
+            }
+        }
+
+        // 即時將 AI 看見的標籤更新到鏡頭下方
+        document.getElementById("debug-text").innerText = `AI 當前看見的標籤: ${prediction[highestIndex].className} (${Math.round(highestProb * 100)}%)`;
+
+        let className = prediction[highestIndex].className.toLowerCase();
+        // 💡 自動排除背景
+        let isBackground = className.includes("background") || className.includes("背景") || className.includes("bg");
+
+        if (highestProb > 0.85 && !isBackground) {
+            let fruitInfo = fruitOrder[highestIndex];
+            let now = Date.now();
+             
+            if (fruitInfo && (lastDetectedFruit !== fruitInfo.key || (now - detectionTimer > COOLDOWN_TIME))) {
+                addToCart(fruitInfo.key);
+                lastDetectedFruit = fruitInfo.key;
+                detectionTimer = now;
+                document.getElementById("instruction").innerHTML = `🔔 成功辨識：<b>${fruitInfo.name}</b>！(請拿開或停留1.5秒再刷下一個)`;
+            }
+        } else if (isBackground && highestProb > 0.7) {
+            lastDetectedFruit = null;
+        }
+    }
+</script>
+
+</body>
+</html>
