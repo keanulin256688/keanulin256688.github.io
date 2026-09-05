@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>寶可夢抓寶大作戰</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+
+        .bg-gradient {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            position: relative;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        #round-info { font-size: 2rem; font-weight: bold; margin-bottom: 5px; }
+        #msg-info { font-size: 1.2rem; }
+        #timer-info { font-size: 1.5rem; color: #ffeb3b; margin-top: 5px; }
+        #buff-info { font-size: 1.3rem; color: #e91e63; font-weight: bold; display: none; }
+        #helper-info { font-size: 1.3rem; color: #00e676; font-weight: bold; display: none; }
+
+        /* 道具庫存欄 */
+        #inventory {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 200;
+        }
+
+        .item-btn {
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #fff;
+            border-radius: 10px;
+            padding: 8px 12px;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: transform 0.1s;
+        }
+
+        .item-btn:active { transform: scale(0.95); }
+
+        /* 寶可夢與禮物盒容器 */
+        .pokemon-container, .gift-box {
+            position: absolute;
+            width: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: left 2.5s ease-in-out, top 2.5s ease-in-out;
+            z-index: 10;
+        }
+
+        .pokemon-img {
+            width: 100px;
+            height: 100px;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+        }
+
+        .boss .pokemon-img {
+            width: 150px;
+            height: 150px;
+            filter: drop-shadow(0 0 15px #ffd700) drop-shadow(0 0 25px #ff5722);
+            animation: pulse 1.5s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.08); }
+        }
+
+        .gift-box {
+            font-size: 60px;
+            animation: bounce 1s infinite alternate;
+        }
+
+        @keyframes bounce {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-15px); }
+        }
+
+        /* 血條顯示 */
+        .hp-bar-bg {
+            width: 100%;
+            height: 10px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 5px;
+            overflow: hidden;
+            border: 1px solid #fff;
+            margin-top: 5px;
+        }
+
+        .hp-bar-fill {
+            height: 100%;
+            width: 100%;
+            background-color: #4caf50;
+            transition: width 0.2s, background-color 0.3s;
+        }
+
+        /* 經典精靈球與大師球粒子 */
+        .pokeball-particle, .masterball-particle {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid #222;
+            pointer-events: none;
+            z-index: 999;
+            animation: explodeBall 0.6s ease-out forwards;
+        }
+
+        .pokeball-particle {
+            width: 24px; height: 24px;
+            background: linear-gradient(to bottom, #ff1744 50%, #ffffff 50%);
+        }
+
+        .masterball-particle {
+            width: 30px; height: 30px;
+            background: linear-gradient(to bottom, #7b1fa2 50%, #ffffff 50%);
+            box-shadow: 0 0 10px #ab47bc;
+        }
+
+        @keyframes explodeBall {
+            0% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 1; }
+            100% { transform: translate(var(--dx), var(--dy)) scale(0.3) rotate(360deg); opacity: 0; }
+        }
+
+        #game-over {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        #game-over button {
+            padding: 12px 24px;
+            font-size: 1.2rem;
+            background-color: #ff4081;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-gradient" id="game-area">
+        <div id="ui-layer">
+            <div id="round-info">第 1 輪</div>
+            <div id="msg-info">點擊寶可夢進行攻擊！</div>
+            <div id="timer-info">剩餘時間：15 秒</div>
+            <div id="buff-info">🔥 大師球狂暴模式 (攻擊 2X) 🔥 <span id="buff-timer">5</span>s</div>
+            <div id="helper-info">🤖 幫手自動攻擊中... <span id="helper-timer">5</span>s</div>
+        </div>
+
+        <div id="inventory">
+            <button class="item-btn" onclick="useTime()">⏳ 時間+5s (<span id="time-count">0</span>)</button>
+            <button class="item-btn" onclick="useLightning()">⚡ 閃電 (<span id="lightning-count">0</span>)</button>
+            <button class="item-btn" onclick="useFreeze()">❄️ 冰凍 (<span id="freeze-count">0</span>)</button>
+            <button class="item-btn" onclick="useBomb()">💣 炸彈 (<span id="bomb-count">0</span>)</button>
+        </div>
+
+        <div id="game-over">
+            <h1>遊戲結束！</h1>
+            <p id="final-score"></p>
+            <button onclick="startGame()">重新開始</button>
+        </div>
+    </div>
+
+    <script>
+        let round = 1;
+        let activePokemons = [];
+        let moveTimer = null;
+        let roundTimer = null;
+        let randomEventInterval = null;
+        let helperInterval = null;
+        
+        let roundTimeLeft = 15;
+        let isFrozen = false;
+        let freezeTimeout = null;
+
+        let isBuffActive = false;
+        let buffTimer = null;
+        let attackPower = 1;
+
+        let isHelperActive = false;
+        let helperTimer = null;
+
+        let items = { time: 0, lightning: 0, freeze: 0, bomb: 0 };
+
+        const gameArea = document.getElementById('game-area');
+        const roundInfo = document.getElementById('round-info');
+        const msgInfo = document.getElementById('msg-info');
+        const timerInfo = document.getElementById('timer-info');
+        const buffInfo = document.getElementById('buff-info');
+        const buffTimerSpan = document.getElementById('buff-timer');
+        const helperInfo = document.getElementById('helper-info');
+        const helperTimerSpan = document.getElementById('helper-timer');
+        const gameOverScreen = document.getElementById('game-over');
+
+        function startGame() {
+            round = 1;
+            roundTimeLeft = 15; // 第一關開局 15 秒
+            items = { time: 0, lightning: 0, freeze: 0, bomb: 0 };
+            updateInventoryUI();
+            gameOverScreen.style.display = 'none';
+            startRound();
+        }
+
+        function startRound() {
+            clearPokemons();
+            clearInterval(roundTimer);
+            clearInterval(randomEventInterval);
+
+            // 第一關基礎 15 秒，之後所有關卡基礎均為 10 秒 (+ 上輪剩餘秒數)
+            const baseTime = (round === 1) ? 15 : 10;
+            roundTimeLeft = baseTime + Math.max(0, roundTimeLeft);
+            
+            roundInfo.innerText = `第 ${round} 輪`;
+            timerInfo.innerText = `剩餘時間：${roundTimeLeft} 秒`;
+
+            if (round % 2 === 0) {
+                msgInfo.innerText = "⚠️ 神獸出現關卡！";
+                msgInfo.style.color = "#ffeb3b";
+            } else {
+                msgInfo.innerText = "點擊寶可夢進行攻擊！";
+                msgInfo.style.color = "white";
+            }
+
+            spawnPokemons();
+
+            clearInterval(moveTimer);
+            moveTimer = setInterval(movePokemons, 2500);
+
+            roundTimer = setInterval(() => {
+                if (!isFrozen) {
+                    roundTimeLeft--;
+                    timerInfo.innerText = `剩餘時間：${roundTimeLeft} 秒${isFrozen ? ' [已冰凍]' : ''}`;
+                    if (roundTimeLeft <= 0) endGame();
+                }
+            }, 1000);
+
+            randomEventInterval = setInterval(checkRandomEvents, 3000);
+        }
+
+        function checkRandomEvents() {
+            if (Math.random() < 0.40 && !isBuffActive) {
+                triggerMasterBallBuff();
+            }
+            if (Math.random() < 0.10 && !isHelperActive) {
+                triggerHelper();
+            }
+            if (Math.random() < 0.40) {
+                spawnGiftBox();
+            }
+        }
+
+        function spawnPokemons() {
+            const isBossRound = (round % 2 === 0);
+            for (let i = 0; i < 5; i++) {
+                const isBoss = isBossRound && (Math.random() < 0.4);
+                let pokeId, maxHp;
+                if (isBoss) {
+                    const legendaryIds = [150, 151, 249, 250, 382, 383, 384];
+                    pokeId = legendaryIds[Math.floor(Math.random() * legendaryIds.length)];
+                    maxHp = 15;
+                } else {
+                    pokeId = Math.floor(Math.random() * 150) + 1;
+                    maxHp = 3;
+                }
+
+                const pokeEl = createPokemonElement(pokeId, maxHp, isBoss);
+                gameArea.appendChild(pokeEl);
+                setRandomPosition(pokeEl);
+                activePokemons.push({ element: pokeEl, hp: maxHp, maxHp: maxHp });
+            }
+        }
+
+        function createPokemonElement(id, hp, isBoss) {
+            const container = document.createElement('div');
+            container.className = `pokemon-container ${isBoss ? 'boss' : ''}`;
+
+            const img = document.createElement('img');
+            img.className = 'pokemon-img';
+            img.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
+
+            const hpBg = document.createElement('div');
+            hpBg.className = 'hp-bar-bg';
+            const hpFill = document.createElement('div');
+            hpFill.className = 'hp-bar-fill';
+            hpBg.appendChild(hpFill);
+
+            container.appendChild(img);
+            container.appendChild(hpBg);
+
+            container.addEventListener('click', (e) => {
+                e.stopPropagation();
+                createPokeballExplosion(e.clientX, e.clientY);
+                damagePokemon(container, attackPower);
+            });
+
+            return container;
+        }
+
+        function spawnGiftBox() {
+            if (document.querySelector('.gift-box')) return;
+            const box = document.createElement('div');
+            box.className = 'gift-box';
+            box.innerText = '🎁';
+            setRandomPosition(box);
+
+            box.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openGiftBox(e.clientX, e.clientY);
+                box.remove();
+            });
+
+            gameArea.appendChild(box);
+            setTimeout(() => { if(box.parentNode) box.remove(); }, 6000);
+        }
+
+        function openGiftBox(x, y) {
+            const rewardTypes = ['time', 'lightning', 'freeze', 'bomb'];
+            const reward = rewardTypes[Math.floor(Math.random() * rewardTypes.length)];
+            items[reward]++;
+            updateInventoryUI();
+
+            const nameMap = { time: '⏳ 增加 5 秒', lightning: '⚡ 閃電', freeze: '❄️ 冰凍', bomb: '💣 炸彈' };
+            msgInfo.innerText = `🎁 獲得道具：${nameMap[reward]}！`;
+            msgInfo.style.color = '#ffeb3b';
+            createPokeballExplosion(x, y);
+        }
+
+        function updateInventoryUI() {
+            document.getElementById('time-count').innerText = items.time;
+            document.getElementById('lightning-count').innerText = items.lightning;
+            document.getElementById('freeze-count').innerText = items.freeze;
+            document.getElementById('bomb-count').innerText = items.bomb;
+        }
+
+        function useTime() {
+            if (items.time <= 0) return;
+            items.time--;
+            roundTimeLeft += 5;
+            updateInventoryUI();
+            timerInfo.innerText = `剩餘時間：${roundTimeLeft} 秒${isFrozen ? ' [已冰凍]' : ''}`;
+            msgInfo.innerText = "⏳ 增加 5 秒成功！";
+        }
+
+        function useLightning() {
+            if (items.lightning <= 0 || activePokemons.length === 0) return;
+            items.lightning--;
+            updateInventoryUI();
+            msgInfo.innerText = "⚡ 發動閃電！全體扣 5 點血量！";
+
+            [...activePokemons].forEach(p => {
+                damagePokemon(p.element, 5);
+            });
+        }
+
+        function useFreeze() {
+            if (items.freeze <= 0 || isFrozen) return;
+            items.freeze--;
+            updateInventoryUI();
+            isFrozen = true;
+            timerInfo.innerText = `剩餘時間：${roundTimeLeft} 秒 [❄️ 冰凍中]`;
+
+            clearTimeout(freezeTimeout);
+            freezeTimeout = setTimeout(() => {
+                isFrozen = false;
+                timerInfo.innerText = `剩餘時間：${roundTimeLeft} 秒`;
+            }, 10000);
+        }
+
+        function useBomb() {
+            if (items.bomb <= 0 || activePokemons.length === 0) return;
+            items.bomb--;
+            updateInventoryUI();
+            msgInfo.innerText = "💣 發動炸彈！直接秒殺一隻寶可夢！";
+
+            const target = activePokemons[Math.floor(Math.random() * activePokemons.length)];
+            damagePokemon(target.element, 999);
+        }
+
+        function setRandomPosition(el) {
+            const padding = 100;
+            const maxX = window.innerWidth - padding - 100;
+            const maxY = window.innerHeight - padding - 100;
+            el.style.left = `${Math.max(padding, Math.floor(Math.random() * maxX))}px`;
+            el.style.top = `${Math.max(padding, Math.floor(Math.random() * maxY))}px`;
+        }
+
+        function movePokemons() {
+            if (isFrozen) return;
+            activePokemons.forEach(p => {
+                if (p.hp > 0) setRandomPosition(p.element);
+            });
+        }
+
+        function damagePokemon(container, dmg) {
+            const target = activePokemons.find(p => p.element === container);
+            if (!target || target.hp <= 0) return;
+
+            target.hp -= dmg;
+            if (target.hp < 0) target.hp = 0;
+
+            const hpPercent = (target.hp / target.maxHp) * 100;
+            const hpFill = container.querySelector('.hp-bar-fill');
+            hpFill.style.width = `${hpPercent}%`;
+
+            if (hpPercent > 50) hpFill.style.backgroundColor = '#4caf50';
+            else if (hpPercent > 20) hpFill.style.backgroundColor = '#ff9800';
+            else hpFill.style.backgroundColor = '#f44336';
+
+            if (target.hp === 0) {
+                container.remove();
+                activePokemons = activePokemons.filter(p => p !== target);
+
+                if (activePokemons.length === 0) {
+                    clearInterval(roundTimer);
+                    clearInterval(randomEventInterval);
+                    round++;
+                    setTimeout(startRound, 500);
+                }
+            }
+        }
+
+        function triggerMasterBallBuff() {
+            isBuffActive = true;
+            attackPower = 2;
+            buffInfo.style.display = 'block';
+            let duration = 5;
+            buffTimerSpan.innerText = duration;
+
+            clearInterval(buffTimer);
+            buffTimer = setInterval(() => {
+                duration--;
+                buffTimerSpan.innerText = duration;
+                if (duration <= 0) {
+                    clearInterval(buffTimer);
+                    isBuffActive = false;
+                    attackPower = 1;
+                    buffInfo.style.display = 'none';
+                }
+            }, 1000);
+        }
+
+        function triggerHelper() {
+            isHelperActive = true;
+            helperInfo.style.display = 'block';
+            let duration = 5;
+            helperTimerSpan.innerText = duration;
+
+            clearInterval(helperInterval);
+            helperInterval = setInterval(() => {
+                if (activePokemons.length > 0) {
+                    const randomTarget = activePokemons[Math.floor(Math.random() * activePokemons.length)];
+                    const rect = randomTarget.element.getBoundingClientRect();
+                    createPokeballExplosion(rect.left + 50, rect.top + 50);
+                    damagePokemon(randomTarget.element, attackPower);
+                }
+            }, 300);
+
+            clearInterval(helperTimer);
+            helperTimer = setInterval(() => {
+                duration--;
+                helperTimerSpan.innerText = duration;
+                if (duration <= 0) {
+                    clearInterval(helperTimer);
+                    clearInterval(helperInterval);
+                    isHelperActive = false;
+                    helperInfo.style.display = 'none';
+                }
+            }, 1000);
+        }
+
+        gameArea.addEventListener('click', (e) => {
+            createPokeballExplosion(e.clientX, e.clientY);
+        });
+
+        function createPokeballExplosion(x, y) {
+            const ballCount = 8;
+            for (let i = 0; i < ballCount; i++) {
+                const ball = document.createElement('div');
+                ball.className = isBuffActive ? 'masterball-particle' : 'pokeball-particle';
+                ball.style.left = `${x - 12}px`;
+                ball.style.top = `${y - 12}px`;
+
+                const angle = (Math.PI * 2 / ballCount) * i;
+                const velocity = 80 + Math.random() * 50;
+                const dx = Math.cos(angle) * velocity;
+                const dy = Math.sin(angle) * velocity;
+
+                ball.style.setProperty('--dx', `${dx}px`);
+                ball.style.setProperty('--dy', `${dy}px`);
+
+                gameArea.appendChild(ball);
+                setTimeout(() => ball.remove(), 600);
+            }
+        }
+
+        function clearPokemons() {
+            activePokemons.forEach(p => p.element.remove());
+            activePokemons = [];
+            const box = document.querySelector('.gift-box');
+            if (box) box.remove();
+        }
+
+        function endGame() {
+            clearInterval(roundTimer);
+            clearInterval(moveTimer);
+            clearInterval(randomEventInterval);
+            clearInterval(helperInterval);
+            clearPokemons();
+            document.getElementById('final-score').innerText = `你最終挑戰到了第 ${round} 輪！`;
+            gameOverScreen.style.display = 'flex';
+        }
+
+        startGame();
+    </script>
+</body>
+</html>
