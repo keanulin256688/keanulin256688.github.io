@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>16x16 圖案串聯跑馬燈編輯器</title>
+  <title>16x16 圖案串聯跑馬燈編輯器 (新細明體一般字版)</title>
   <style>
     :root {
       --bg-color: #0f172a;
@@ -83,6 +83,22 @@
       gap: 15px;
     }
 
+    .tool-section {
+      width: 100%;
+      background: #0f172a;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .tool-section h4 {
+      font-size: 0.95rem;
+      color: #38bdf8;
+    }
+
     .controls-row {
       width: 100%;
       display: flex;
@@ -100,10 +116,10 @@
 
     label {
       font-weight: bold;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
     }
 
-    select {
+    select, input[type="text"], input[type="password"] {
       background-color: var(--bg-color);
       color: var(--text-color);
       border: 1px solid var(--border-color);
@@ -111,7 +127,6 @@
       border-radius: 6px;
       font-size: 0.9rem;
       outline: none;
-      cursor: pointer;
     }
 
     .color-preview-box {
@@ -151,6 +166,17 @@
       background-color: #334155;
     }
 
+    button.rainbow-btn {
+      background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #00ffff, #0000ff, #8b00ff, #ff007f);
+      color: white;
+      text-shadow: 1px 1px 2px #000;
+      font-weight: bold;
+    }
+
+    button.rainbow-btn:hover {
+      opacity: 0.9;
+    }
+
     button.play-btn {
       background-color: var(--accent-color);
     }
@@ -183,15 +209,9 @@
       outline: 1px solid rgba(255, 255, 255, 0.8);
     }
 
-    .code-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
     textarea {
       width: 100%;
-      height: 420px;
+      height: 320px;
       background-color: #090d16;
       color: #a5f3fc;
       border: 1px solid var(--border-color);
@@ -202,22 +222,19 @@
       resize: vertical;
       outline: none;
       white-space: pre;
+      user-select: text !important;
+      -webkit-user-select: text !important;
+      cursor: text !important;
     }
 
-    .official-link-btn {
-      display: inline-block;
-      text-align: center;
-      background-color: #059669;
-      color: white;
-      text-decoration: none;
-      padding: 12px;
-      border-radius: 6px;
-      font-weight: bold;
-      transition: background-color 0.2s;
+    .rgb-inputs {
+      display: flex;
+      gap: 6px;
+      align-items: center;
     }
 
-    .official-link-btn:hover {
-      background-color: #047857;
+    .rgb-inputs input {
+      width: 50px;
     }
   </style>
 </head>
@@ -225,13 +242,47 @@
 
 <div class="container">
   <header>
-    <h1>➡️ 16x16 圖案串聯跑馬燈編輯器</h1>
-    <p>在不同畫板畫下完整圖樣，按下預覽，程式會自動把所有畫板串起來從右往左滾動！</p>
+    <h1>➡️ 16x16 圖案串聯跑馬燈編輯器 (新細明體版)</h1>
+    <p>中英文文字生成、16 條固定螢幕位置彩虹、Code 自由貼上還原與作品儲存！</p>
   </header>
 
   <div class="main-layout">
     <!-- 左側繪圖與控制區 -->
     <div class="left-panel">
+      
+      <!-- 存檔與載入區 -->
+      <div class="tool-section">
+        <h4>☁️ 作品儲存與密碼載入</h4>
+        <div class="controls-row">
+          <input type="text" id="projectName" placeholder="作品名稱..." style="width: 140px;">
+          <input type="password" id="projectPass" placeholder="設定密碼" style="width: 100px;">
+          <button id="saveProjectBtn">💾 儲存作品</button>
+        </div>
+        <div class="controls-row">
+          <input type="text" id="loadProjectName" placeholder="輸入作品名稱..." style="width: 140px;">
+          <input type="password" id="loadPass" placeholder="解鎖密碼" style="width: 100px;">
+          <button class="secondary" id="loadProjectBtn">📂 載入作品</button>
+        </div>
+      </div>
+
+      <!-- 文字自動生成器 -->
+      <div class="tool-section">
+        <h4>🔤 中英文文字轉像素圖案</h4>
+        <div class="controls-row">
+          <input type="text" id="textInput" placeholder="輸入文字 (例如: Hello / 哈囉)" style="width: 180px;">
+          <div class="select-group">
+            <label>字型:</label>
+            <select id="fontSelect">
+              <option value="PMingLiU" selected>新細明體</option>
+              <option value="Microsoft JhengHei">微軟正黑體</option>
+              <option value="DFKai-SB">標楷體</option>
+              <option value="Arial">Arial (英)</option>
+            </select>
+          </div>
+          <button id="generateTextBtn">✨ 生成文字圖案</button>
+        </div>
+      </div>
+
       <!-- 控制列 1：選擇畫板數量與當前畫板 -->
       <div class="controls-row">
         <div class="select-group">
@@ -240,21 +291,32 @@
         </div>
 
         <div class="select-group">
-          <label for="boardSelect">🖼️ 當前編輯畫板：</label>
+          <label for="boardSelect">🖼️ 當前畫板：</label>
           <select id="boardSelect"></select>
         </div>
       </div>
 
-      <!-- 控制列 2：調色盤與預覽播放 -->
+      <!-- 控制列 2：調色盤與 RGB -->
       <div class="controls-row">
         <div class="select-group">
-          <label for="colorSelect">🎨 筆刷 (30色)：</label>
+          <label for="colorSelect">🎨 筆刷：</label>
           <select id="colorSelect"></select>
           <div id="colorPreview" class="color-preview-box"></div>
         </div>
 
+        <div class="rgb-inputs">
+          <label>RGB:</label>
+          <input type="number" id="customR" min="0" max="38" value="38" placeholder="R">
+          <input type="number" id="customG" min="0" max="38" value="0" placeholder="G">
+          <input type="number" id="customB" min="0" max="38" value="0" placeholder="B">
+          <button class="secondary" id="applyRgbBtn">自訂色</button>
+        </div>
+      </div>
+
+      <div class="controls-row">
         <div class="btn-group">
           <button id="playBtn" class="play-btn">▶️ 連貫跑馬燈預覽</button>
+          <button class="rainbow-btn" id="rainbowBtn">🌈 啟用螢幕 16 條過場彩虹</button>
           <button class="secondary" id="clearBtn">清空當前畫板</button>
         </div>
       </div>
@@ -265,22 +327,24 @@
 
     <!-- 右側程式碼區 -->
     <div class="right-panel">
-      <div class="code-header">
-        <h3>💻 MicroPython 串聯跑馬燈程式碼</h3>
-        <button id="copyBtn">一鍵複製 Code</button>
+      <div class="controls-row">
+        <h3>💻 MicroPython 程式碼</h3>
+        <div class="btn-group">
+          <button class="secondary" id="clearCodeBtn">🧹 清空文字框</button>
+          <button id="copyBtn">一鍵複製 Code</button>
+        </div>
       </div>
 
-      <textarea id="codeOutput" readonly></textarea>
+      <!-- 可自由編輯、輸入、貼上的文字框 -->
+      <textarea id="codeOutput" placeholder="在點擊這裡，可以直接貼上之前儲存的 MicroPython 程式碼..."></textarea>
 
-      <a href="https://python.microbit.org/v/3" target="_blank" rel="noopener noreferrer" class="official-link-btn">
-        🚀 前往 micro:bit 官方 Python 編輯器 (python.microbit.org)
-      </a>
+      <button id="importCodeBtn" style="width: 100%; background-color: #8b5cf6; margin-top: 5px;">📥 從程式碼匯入圖案 (貼上 Code 後按此)</button>
     </div>
   </div>
 </div>
 
 <script>
-  const PALETTE = [
+  let PALETTE = [
     { id: 0,  name: "0. 關閉 (黑色)", rgb: [0, 0, 0] },
     { id: 1,  name: "1. 正紅色 (Red)", rgb: [38, 0, 0] },
     { id: 2,  name: "2. 正綠色 (Green)", rgb: [0, 38, 0] },
@@ -291,37 +355,46 @@
     { id: 7,  name: "7. 鮮橙色 (Orange)", rgb: [38, 19, 0] },
     { id: 8,  name: "8. 紫羅蘭 (Violet)", rgb: [19, 0, 38] },
     { id: 9,  name: "9. 玫瑰粉 (Pink)", rgb: [38, 0, 19] },
-    { id: 10, name: "10. 綠松石 (Teal)", rgb: [0, 38, 19] },
-    { id: 11, name: "11. 檸檬綠 (Lime)", rgb: [19, 38, 0] },
-    { id: 12, name: "12. 純白色 (White)", rgb: [38, 38, 38] },
-    { id: 13, name: "13. 琥珀金 (Amber)", rgb: [38, 28, 0] },
-    { id: 14, name: "14. 天藍色 (Sky Blue)", rgb: [0, 19, 38] },
-    { id: 15, name: "15. 深紫紅 (Plum)", rgb: [28, 0, 38] },
-    { id: 16, name: "16. 朱紅色 (Vermilion)", rgb: [38, 10, 0] },
-    { id: 17, name: "17. 翠綠色 (Emerald)", rgb: [0, 38, 10] },
-    { id: 18, name: "18. 深蔚藍 (Navy)", rgb: [0, 10, 38] },
-    { id: 19, name: "19. 亮黃綠 (Chartreuse)", rgb: [28, 38, 0] },
-    { id: 20, name: "20. 薄荷綠 (Mint)", rgb: [0, 38, 28] },
-    { id: 21, name: "21. 薰衣草 (Lavender)", rgb: [28, 19, 38] },
-    { id: 22, name: "22. 桃紅色 (Peach Pink)", rgb: [38, 0, 28] },
-    { id: 23, name: "23. 珊瑚橘 (Coral)", rgb: [38, 15, 10] },
-    { id: 24, name: "24. 橄欖綠 (Olive)", rgb: [19, 28, 0] },
-    { id: 25, name: "25. 藍綠色 (Teal Blue)", rgb: [0, 28, 28] },
-    { id: 26, name: "26. 靛青色 (Indigo)", rgb: [10, 0, 38] },
-    { id: 27, name: "27. 暖粉色 (Warm Pink)", rgb: [38, 19, 19] },
-    { id: 28, name: "28. 亮灰色 (Grey)", rgb: [25, 25, 25] },
-    { id: 29, name: "29. 淺天藍 (Light Sky)", rgb: [19, 28, 38] },
-    { id: 30, name: "30. 咖啡棕 (Brown)", rgb: [25, 12, 0] }
+    { id: 10, name: "10. 純白色 (White)", rgb: [38, 38, 38] }
   ];
+
+  const RAINBOW_16_RGB = [];
+  for (let i = 0; i < 16; i++) {
+    const hue = (i / 16) * 360;
+    RAINBOW_16_RGB.push(hsvToRgb(hue, 100, 100));
+  }
+
+  function hsvToRgb(h, s, v) {
+    let r, g, b;
+    s /= 100; v /= 100;
+    let c = v * s;
+    let x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    let m = v - c;
+
+    if (h >= 0 && h < 60) { r = c; g = x; b = 0; }
+    else if (h >= 60 && h < 120) { r = x; g = c; b = 0; }
+    else if (h >= 120 && h < 180) { r = 0; g = c; b = x; }
+    else if (h >= 180 && h < 240) { r = 0; g = x; b = c; }
+    else if (h >= 240 && h < 300) { r = x; g = 0; b = c; }
+    else { r = c; g = 0; b = x; }
+
+    return [
+      Math.round((r + m) * 38),
+      Math.round((g + m) * 38),
+      Math.round((b + m) * 38)
+    ];
+  }
 
   let maxAllowedFrames = 3;
   let framesData = Array(15).fill(0).map(() => Array(16).fill(0).map(() => Array(16).fill(0)));
   let currentFrameIndex = 0;
   let currentColorId = 1;
   let isMouseDown = false;
+  let isEditingCode = false;
   let playTimer = null;
   let isPlaying = false;
   let scrollOffsetX = 0;
+  let useScreenRainbow = false;
 
   const totalFramesSelectEl = document.getElementById('totalFramesSelect');
   const boardSelectEl = document.getElementById('boardSelect');
@@ -330,6 +403,9 @@
   const gridEl = document.getElementById('grid');
   const codeOutputEl = document.getElementById('codeOutput');
   const playBtn = document.getElementById('playBtn');
+
+  codeOutputEl.addEventListener('focus', () => { isEditingCode = true; });
+  codeOutputEl.addEventListener('blur', () => { isEditingCode = false; });
 
   function initTotalFramesSelect() {
     totalFramesSelectEl.innerHTML = '';
@@ -375,7 +451,7 @@
       const opt = document.createElement('option');
       opt.value = item.id;
       opt.textContent = item.name;
-      if (item.id === 1) opt.selected = true;
+      if (item.id === currentColorId) opt.selected = true;
       colorSelectEl.appendChild(opt);
     });
 
@@ -387,10 +463,23 @@
   }
 
   function updateColorPreview() {
-    const color = PALETTE.find(p => p.id === currentColorId);
+    const color = PALETTE.find(p => p.id === currentColorId) || { rgb: [38, 0, 0] };
     const [r, g, b] = color.rgb;
     colorPreviewEl.style.backgroundColor = `rgb(${r * 6}, ${g * 6}, ${b * 6})`;
   }
+
+  document.getElementById('applyRgbBtn').addEventListener('click', () => {
+    const r = Math.min(38, Math.max(0, parseInt(document.getElementById('customR').value) || 0));
+    const g = Math.min(38, Math.max(0, parseInt(document.getElementById('customG').value) || 0));
+    const b = Math.min(38, Math.max(0, parseInt(document.getElementById('customB').value) || 0));
+
+    const newId = PALETTE.length;
+    const customColor = { id: newId, name: `${newId}. 自訂色 (${r},${g},${b})`, rgb: [r, g, b] };
+    PALETTE.push(customColor);
+    
+    currentColorId = newId;
+    initColorSelect();
+  });
 
   function initGridUI() {
     gridEl.innerHTML = '';
@@ -401,15 +490,21 @@
         pixel.dataset.x = x;
         pixel.dataset.y = y;
 
-        pixel.addEventListener('mousedown', () => {
+        pixel.addEventListener('mousedown', (e) => {
+          e.stopPropagation();
           stopPreview();
           isMouseDown = true;
-          paintPixel(x, y, pixel);
+          const currentPixelColor = framesData[currentFrameIndex][y][x];
+          if (currentPixelColor === currentColorId) {
+            paintPixel(x, y, pixel, 0);
+          } else {
+            paintPixel(x, y, pixel, currentColorId);
+          }
         });
 
         pixel.addEventListener('mouseenter', () => {
           if (isMouseDown) {
-            paintPixel(x, y, pixel);
+            paintPixel(x, y, pixel, currentColorId);
           }
         });
 
@@ -430,52 +525,170 @@
       const x = parseInt(p.dataset.x);
       const y = parseInt(p.dataset.y);
       const colorId = framesData[currentFrameIndex][y][x];
-      const color = PALETTE.find(item => item.id === colorId);
-      const [r, g, b] = color.rgb;
+      
+      let r, g, b;
+      if (colorId !== 0 && useScreenRainbow) {
+        [r, g, b] = RAINBOW_16_RGB[x];
+      } else {
+        const color = PALETTE.find(item => item.id === colorId) || { rgb: [0, 0, 0] };
+        [r, g, b] = color.rgb;
+      }
       p.style.backgroundColor = colorId === 0 ? '#111' : `rgb(${r * 6}, ${g * 6}, ${b * 6})`;
     });
     boardSelectEl.value = currentFrameIndex;
   }
 
-  function renderPreviewFrame(offsetX) {
-    const pixels = gridEl.querySelectorAll('.pixel');
-    const totalWidth = maxAllowedFrames * 16;
-
-    pixels.forEach(p => {
-      const screenX = parseInt(p.dataset.x);
-      const y = parseInt(p.dataset.y);
-      
-      // 計算世界座標 (World X)
-      const worldX = offsetX + screenX - 16;
-
-      let colorId = 0;
-      if (worldX >= 0 && worldX < totalWidth) {
-        const boardIdx = Math.floor(worldX / 16);
-        const localX = worldX % 16;
-        colorId = framesData[boardIdx][y][localX];
-      }
-
-      const color = PALETTE.find(item => item.id === colorId);
-      const [r, g, b] = color.rgb;
-      p.style.backgroundColor = colorId === 0 ? '#111' : `rgb(${r * 6}, ${g * 6}, ${b * 6})`;
-    });
-  }
-
-  function paintPixel(x, y, el) {
-    framesData[currentFrameIndex][y][x] = currentColorId;
-    const color = PALETTE.find(p => p.id === currentColorId);
-    const [r, g, b] = color.rgb;
-    el.style.backgroundColor = currentColorId === 0 ? '#111' : `rgb(${r * 6}, ${g * 6}, ${b * 6})`;
+  function paintPixel(x, y, el, targetColorId) {
+    framesData[currentFrameIndex][y][x] = targetColorId;
+    renderCurrentFrameGrid();
     generateCode();
   }
 
-  // 跑馬燈播放（連貫串聯滾動）
-  playBtn.addEventListener('click', () => {
-    if (isPlaying) {
-      stopPreview();
-    } else {
-      startPreview();
+  document.getElementById('rainbowBtn').addEventListener('click', () => {
+    useScreenRainbow = !useScreenRainbow;
+    renderCurrentFrameGrid();
+    generateCode();
+    alert(useScreenRainbow ? "🌈 已啟用螢幕彩虹過場！" : "已關閉彩虹，恢復預設筆刷顏色。");
+  });
+
+  // 🔤 文字生成 (設為一般粗細 + 新細明體)
+  document.getElementById('generateTextBtn').addEventListener('click', () => {
+    const text = document.getElementById('textInput').value;
+    const font = document.getElementById('fontSelect').value;
+    if (!text) return alert("請輸入文字！");
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    const neededBoards = Math.min(15, Math.max(1, Math.ceil((text.length * 13) / 16)));
+    maxAllowedFrames = neededBoards;
+    totalFramesSelectEl.value = maxAllowedFrames;
+    updateBoardSelectOptions();
+
+    const canvasWidth = maxAllowedFrames * 16;
+    canvas.width = canvasWidth;
+    canvas.height = 16;
+
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, canvasWidth, 16);
+    ctx.fillStyle = "white";
+    
+    // 文字改為 normal 一般粗細
+    ctx.font = `normal 12px ${font}`;
+    ctx.textBaseline = "middle";
+    ctx.fillText(text, 0, 8);
+
+    const imgData = ctx.getImageData(0, 0, canvasWidth, 16).data;
+    framesData = Array(15).fill(0).map(() => Array(16).fill(0).map(() => Array(16).fill(0)));
+
+    for (let board = 0; board < maxAllowedFrames; board++) {
+      for (let y = 0; y < 16; y++) {
+        for (let x = 0; x < 16; x++) {
+          const canvasX = board * 16 + x;
+          const imgIndex = (y * canvasWidth + canvasX) * 4;
+          const brightness = imgData[imgIndex];
+          if (brightness > 120) {
+            framesData[board][y][x] = currentColorId;
+          }
+        }
+      }
     }
+
+    renderCurrentFrameGrid();
+    generateCode();
+    alert(`✨ 已成功生成文字圖案！`);
+  });
+
+  // 💾 儲存作品
+  document.getElementById('saveProjectBtn').addEventListener('click', () => {
+    const name = document.getElementById('projectName').value.trim();
+    const pass = document.getElementById('projectPass').value.trim();
+
+    if (!name || !pass) return alert("請填寫「作品名稱」與「設定密碼」！");
+
+    const payload = {
+      name: name,
+      password: pass,
+      maxAllowedFrames: maxAllowedFrames,
+      framesData: framesData,
+      palette: PALETTE,
+      useScreenRainbow: useScreenRainbow
+    };
+
+    localStorage.setItem(`LED_PROJECT_${name}`, JSON.stringify(payload));
+    alert(`🎉 作品「${name}」已成功儲存！`);
+  });
+
+  // 📂 載入作品
+  document.getElementById('loadProjectBtn').addEventListener('click', () => {
+    const name = document.getElementById('loadProjectName').value.trim();
+    const pass = document.getElementById('loadPass').value.trim();
+
+    if (!name || !pass) return alert("請輸入「作品名稱」與「解鎖密碼」！");
+
+    const savedData = localStorage.getItem(`LED_PROJECT_${name}`);
+    if (!savedData) return alert("❌ 找不到此作品名稱！");
+
+    const data = JSON.parse(savedData);
+    if (data.password !== pass) return alert("❌ 密碼錯誤！");
+
+    maxAllowedFrames = data.maxAllowedFrames;
+    framesData = data.framesData;
+    if (data.palette) PALETTE = data.palette;
+    useScreenRainbow = !!data.useScreenRainbow;
+
+    totalFramesSelectEl.value = maxAllowedFrames;
+    currentFrameIndex = 0;
+    updateBoardSelectOptions();
+    initColorSelect();
+    renderCurrentFrameGrid();
+    generateCode();
+
+    alert(`📂 成功載入作品：「${data.name}」！`);
+  });
+
+  // 🧹 清空 Code 文字框
+  document.getElementById('clearCodeBtn').addEventListener('click', () => {
+    codeOutputEl.value = '';
+    codeOutputEl.focus();
+  });
+
+  // 📥 從 Code 貼上匯入
+  document.getElementById('importCodeBtn').addEventListener('click', () => {
+    const rawCode = codeOutputEl.value;
+    if (!rawCode) return alert("請先在輸入框內貼上 MicroPython 程式碼！");
+
+    try {
+      const boardsMatch = rawCode.match(/BOARDS\s*=\s*\[([\s\S]*?)\]\n\nTOTAL_BOARDS/);
+      if (!boardsMatch) return alert("解析失敗！請確認貼入的是由此編輯器生成的 Python 程式碼。");
+
+      const parsedBoards = eval("[" + boardsMatch[1] + "]");
+
+      maxAllowedFrames = parsedBoards.length;
+      framesData = Array(15).fill(0).map(() => Array(16).fill(0).map(() => Array(16).fill(0)));
+
+      for (let b = 0; b < maxAllowedFrames; b++) {
+        framesData[b] = parsedBoards[b];
+      }
+
+      useScreenRainbow = rawCode.includes("RAINBOW_PALETTE = [");
+
+      totalFramesSelectEl.value = maxAllowedFrames;
+      currentFrameIndex = 0;
+      updateBoardSelectOptions();
+      initColorSelect();
+      renderCurrentFrameGrid();
+      generateCode();
+
+      alert(`🎉 成功解析並還原 ${maxAllowedFrames} 個畫板圖案！`);
+    } catch (err) {
+      alert("解析失敗！請確保貼上的程式碼沒有遺漏括號。");
+    }
+  });
+
+  // 跑馬燈播放
+  playBtn.addEventListener('click', () => {
+    isPlaying ? stopPreview() : startPreview();
   });
 
   function startPreview() {
@@ -503,27 +716,56 @@
     }
   }
 
-  // 產生 MicroPython 程式碼（自動串聯滾動算法）
-  function generateCode() {
-    let pythonCode = `from microbit import *
-import neopixel
+  function renderPreviewFrame(offsetX) {
+    const pixels = gridEl.querySelectorAll('.pixel');
+    const totalWidth = maxAllowedFrames * 16;
 
-# 初始化 16x16 NeoPixel 燈板 (Pin 16)
-np = neopixel.NeoPixel(pin16, 256)
+    pixels.forEach(p => {
+      const screenX = parseInt(p.dataset.x);
+      const y = parseInt(p.dataset.y);
+      const worldX = offsetX + screenX - 16;
 
-# 30 色 RGB 對照表
-PALETTE = {\n`;
-
-    PALETTE.forEach(p => {
-      if (p.id > 0) {
-        pythonCode += `    ${p.id}: (${p.rgb[0]}, ${p.rgb[1]}, ${p.rgb[2]}),\n`;
+      let colorId = 0;
+      if (worldX >= 0 && worldX < totalWidth) {
+        const boardIdx = Math.floor(worldX / 16);
+        const localX = worldX % 16;
+        colorId = framesData[boardIdx][y][localX];
       }
+
+      let r, g, b;
+      if (colorId !== 0 && useScreenRainbow) {
+        [r, g, b] = RAINBOW_16_RGB[screenX];
+      } else {
+        const color = PALETTE.find(item => item.id === colorId) || { rgb: [0, 0, 0] };
+        [r, g, b] = color.rgb;
+      }
+
+      p.style.backgroundColor = colorId === 0 ? '#111' : `rgb(${r * 6}, ${g * 6}, ${b * 6})`;
     });
+  }
 
-    pythonCode += `}
+  function generateCode() {
+    if (isEditingCode) return;
 
-# 畫板資料 (共 ${maxAllowedFrames} 個畫板)
-BOARDS = [\n`;
+    let pythonCode = `from microbit import *\nimport neopixel\n\nnp = neopixel.NeoPixel(pin16, 256)\n\n`;
+
+    if (useScreenRainbow) {
+      pythonCode += `RAINBOW_PALETTE = [\n`;
+      RAINBOW_16_RGB.forEach((rgb, idx) => {
+        pythonCode += `    (${rgb[0]}, ${rgb[1]}, ${rgb[2]}), # 欄位 ${idx + 1}\n`;
+      });
+      pythonCode += `]\n\n`;
+    } else {
+      pythonCode += `PALETTE = {\n`;
+      PALETTE.forEach(p => {
+        if (p.id > 0) {
+          pythonCode += `    ${p.id}: (${p.rgb[0]}, ${p.rgb[1]}, ${p.rgb[2]}),\n`;
+        }
+      });
+      pythonCode += `}\n\n`;
+    }
+
+    pythonCode += `BOARDS = [\n`;
 
     for (let f = 0; f < maxAllowedFrames; f++) {
       pythonCode += `    # --- 畫板 ${f + 1} ---\n    [\n`;
@@ -533,40 +775,15 @@ BOARDS = [\n`;
       pythonCode += `    ]${f < maxAllowedFrames - 1 ? "," : ""}\n`;
     }
 
-    pythonCode += `]
+    pythonCode += `]\n\nTOTAL_BOARDS = ${maxAllowedFrames}\nTOTAL_WIDTH = TOTAL_BOARDS * 16\n\ndef get_pixel_index(x, y):\n    return y * 16 + (15 - x) if y % 2 == 0 else y * 16 + x\n\noffset_x = 0\nwhile True:\n    np.fill((0, 0, 0))\n    \n    for screen_x in range(16):\n        world_x = offset_x + screen_x - 16\n        \n        if 0 <= world_x < TOTAL_WIDTH:\n            board_idx = world_x // 16\n            local_x = world_x % 16\n            \n            for y in range(16):\n                color_id = BOARDS[board_idx][y][local_x]\n                if color_id != 0:\n                    idx = get_pixel_index(screen_x, y)\n`;
 
-TOTAL_BOARDS = ${maxAllowedFrames}
-TOTAL_WIDTH = TOTAL_BOARDS * 16
+    if (useScreenRainbow) {
+      pythonCode += `                    np[idx] = RAINBOW_PALETTE[screen_x]\n`;
+    } else {
+      pythonCode += `                    if color_id in PALETTE:\n                        np[idx] = PALETTE[color_id]\n`;
+    }
 
-def get_pixel_index(x, y):
-    """ 16x16 S型蛇形燈條轉換 """
-    return y * 16 + (15 - x) if y % 2 == 0 else y * 16 + x
-
-# 無限滾動跑馬燈 (自動把所有畫板串聯，從右邊平滑進場向左滾動)
-offset_x = 0
-while True:
-    np.fill((0, 0, 0))
-    
-    for screen_x in range(16):
-        world_x = offset_x + screen_x - 16
-        
-        if 0 <= world_x < TOTAL_WIDTH:
-            board_idx = world_x // 16
-            local_x = world_x % 16
-            
-            for y in range(16):
-                color_id = BOARDS[board_idx][y][local_x]
-                if color_id in PALETTE:
-                    idx = get_pixel_index(screen_x, y)
-                    np[idx] = PALETTE[color_id]
-                    
-    np.show()
-    sleep(100) # 控制滾動速度 (毫秒)
-    
-    offset_x += 1
-    if offset_x >= TOTAL_WIDTH + 16:
-        offset_x = 0
-`;
+    pythonCode += `                    \n    np.show()\n    sleep(100)\n    \n    offset_x += 1\n    if offset_x >= TOTAL_WIDTH + 16:\n        offset_x = 0\n`;
 
     codeOutputEl.value = pythonCode;
   }
@@ -581,7 +798,7 @@ while True:
   document.getElementById('copyBtn').addEventListener('click', () => {
     codeOutputEl.select();
     document.execCommand('copy');
-    alert('已成功複製連貫跑馬燈 MicroPython 程式碼！');
+    alert('已成功複製 MicroPython 程式碼！');
   });
 
   initTotalFramesSelect();
